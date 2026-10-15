@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pastillero inteligente · Datos del paciente</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="app">
+    <section class="contenido">
+      <h1><a href="panel.html" style="color:inherit;text-decoration:none">←</a> Datos del paciente</h1>
+
+      <form id="form">
+        <label for="nombre">Nombre de quien toma las pastillas</label>
+        <input type="text" id="nombre" placeholder="Ej. Don José" required maxlength="60">
+
+        <label for="photon">Device ID del Photon</label>
+        <input type="text" id="photon" placeholder="24 caracteres, ej. 3c002a0011473531..." required minlength="24" maxlength="24">
+        <p class="suave">Solo cámbialo si cambiaste de Photon. Está en console.particle.io → Devices.</p>
+
+        <div class="botones">
+          <button type="submit" class="boton principal" id="btn-guardar">Guardar cambios</button>
+        </div>
+        <p class="mensaje" id="mensaje"></p>
+      </form>
+    </section>
+
+    <nav class="nav">
+      <a href="panel.html" class="actual">Panel</a>
+      <a href="historial.html">Historial</a>
+    </nav>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/paciente.js"></script>
+</body>
+</html>

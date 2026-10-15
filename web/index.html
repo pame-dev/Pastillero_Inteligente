@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pastillero inteligente · Iniciar sesión</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="app login">
+    <!-- Solo se ve en pantallas grandes (laptop) -->
+    <aside class="portada">
+      <div class="portada-marca">Pastillero inteligente</div>
+      <h2 class="portada-titulo">Cada dosis, a su hora.</h2>
+      <p class="portada-texto">Programa los 7 compartimentos, recibe el aviso con el LED y revisa el historial de tomas desde cualquier lugar.</p>
+    </aside>
+
+    <section class="contenido">
+      <div class="logo">P</div>
+      <h1 class="centro">Pastillero inteligente</h1>
+      <p class="suave centro">Acceso para el responsable</p>
+
+      <div class="pestanas">
+        <button type="button" id="tab-entrar" class="activa">Entrar</button>
+        <button type="button" id="tab-crear">Crear cuenta</button>
+      </div>
+
+      <form id="form-acceso">
+        <!-- Solo al crear cuenta (opcionales) -->
+        <div id="campos-registro" class="oculto">
+          <div class="foto-registro">
+            <label for="foto-nueva" class="avatar grande seleccionable" id="vista-foto" title="Agregar foto">
+              <span id="vista-foto-inicial">+</span>
+            </label>
+            <div>
+              <div class="suave">Foto (opcional)</div>
+              <button type="button" class="enlace" id="btn-quitar-foto-nueva" hidden>Quitar foto</button>
+            </div>
+            <input type="file" id="foto-nueva" accept="image/*" hidden>
+          </div>
+
+          <label for="nombre-encargado">Tu nombre (opcional)</label>
+          <input type="text" id="nombre-encargado" placeholder="Ej. Roxana Orozco" maxlength="60" autocomplete="name">
+        </div>
+
+        <label for="correo">Correo</label>
+        <input type="email" id="correo" placeholder="nombre@correo.com" required autocomplete="email">
+
+        <label for="contrasena">Contraseña</label>
+        <input type="password" id="contrasena" placeholder="Mínimo 6 caracteres" required minlength="6" autocomplete="current-password">
+
+        <div class="botones">
+          <button type="submit" class="boton principal" id="btn-enviar">Entrar</button>
+        </div>
+        <p class="mensaje" id="mensaje"></p>
+      </form>
+
+      <p class="centro"><button type="button" class="enlace" id="btn-olvide">¿Olvidaste tu contraseña?</button></p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pastillero inteligente · Panel</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="app">
+    <section class="contenido">
+
+      <!-- Encargado (toca su foto o nombre para editar) y cerrar sesion -->
+      <header class="barra-superior">
+        <button type="button" class="perfil" id="btn-perfil" title="Editar mi perfil">
+          <span class="avatar" id="avatar"></span>
+          <span class="perfil-texto">
+            <span class="perfil-rol">Encargado</span>
+            <strong id="nombre-encargado">...</strong>
+          </span>
+        </button>
+        <button type="button" class="boton chico salir" id="btn-salir">Cerrar sesión</button>
+      </header>
+
+      <!-- Si algo falla al cargar, el error se muestra aqui -->
+      <p class="mensaje error" id="error-carga"></p>
+
+      <!-- Se muestra solo si el responsable aun no registra su pastillero -->
+      <div id="registro" class="oculto">
+        <h2>Registra el pastillero</h2>
+        <p class="suave">Solo se hace una vez. El Device ID está en la consola de Particle (console.particle.io).</p>
+        <form id="form-registro">
+          <label for="nombre">Nombre de quien toma las pastillas</label>
+          <input type="text" id="nombre" placeholder="Ej. Don José" required>
+          <label for="photon">Device ID del Photon</label>
+          <input type="text" id="photon" placeholder="24 caracteres, ej. 3c002a0011473531..." required minlength="24" maxlength="24">
+          <div class="botones"><button class="boton principal" type="submit">Registrar</button></div>
+          <p class="mensaje" id="msg-registro"></p>
+        </form>
+      </div>
+
+      <!-- Panel normal -->
+      <div id="panel" class="oculto">
+        <div class="encabezado">
+          <div>
+            <div class="saludo" id="saludo">Hola</div>
+            <div class="suave">Pastillero de</div>
+            <h1 id="paciente-nombre"></h1>
+          </div>
+          <span class="chip"><span class="punto gris" id="linea-punto"></span><span id="linea-texto">Revisando...</span></span>
+        </div>
+
+        <div class="proxima" id="proxima">
+          <strong id="proxima-titulo">Sin tomas programadas</strong>
+          <span id="proxima-detalle" class="suave">Toca un compartimento para configurarlo</span>
+          <span class="cuenta" id="proxima-cuenta"></span>
+        </div>
+
+        <ul class="lista" id="lista"></ul>
+
+        <div class="acciones">
+          <p class="centro"><a href="paciente.html" class="boton">Editar datos del paciente</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ventana para editar el perfil del encargado -->
+    <dialog id="dlg-perfil" class="dialogo">
+      <form id="form-perfil">
+        <h2>Mi perfil</h2>
+        <div class="foto-editar">
+          <span class="avatar xl" id="avatar-editar"></span>
+          <div class="foto-botones">
+            <label for="foto-editar" class="boton chico">Cambiar foto</label>
+            <button type="button" class="enlace" id="btn-quitar-foto">Quitar foto</button>
+          </div>
+          <input type="file" id="foto-editar" accept="image/*" hidden>
+        </div>
+
+        <label for="nombre-editar">Nombre</label>
+        <input type="text" id="nombre-editar" maxlength="60" placeholder="Tu nombre (opcional)" autocomplete="name">
+        <p class="suave">Correo: <span id="correo-editar"></span></p>
+
+        <div class="botones">
+          <button type="button" class="boton" id="btn-cancelar-perfil">Cancelar</button>
+          <button type="submit" class="boton principal" id="btn-guardar-perfil">Guardar</button>
+        </div>
+        <p class="mensaje" id="msg-perfil"></p>
+      </form>
+    </dialog>
+
+    <nav class="nav">
+      <a href="panel.html" class="actual">Panel</a>
+      <a href="historial.html">Historial</a>
+    </nav>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/panel.js"></script>
+</body>
+</html>

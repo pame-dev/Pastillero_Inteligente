@@ -1,0 +1,17 @@
+{
+  "event": "toma",
+  "url": "https://TU-PROYECTO.supabase.co/rest/v1/rpc/registrar_toma",
+  "requestType": "POST",
+  "noDefaults": true,
+  "mydevices": true,
+  "headers": {
+    "apikey": "TU_CLAVE_PUBLICA_DE_SUPABASE",
+    "Authorization": "Bearer TU_CLAVE_PUBLICA_DE_SUPABASE",
+    "Content-Type": "application/json"
+  },
+  "json": {
+    "p_photon_id": "{{{PARTICLE_DEVICE_ID}}}",
+    "p_numero": "{{{comp}}}",
+    "p_estado": "{{{estado}}}"
+  }
+}

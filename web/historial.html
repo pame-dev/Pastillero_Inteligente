@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pastillero inteligente · Historial</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="app">
+    <section class="contenido">
+      <div class="encabezado">
+        <h1>Historial</h1>
+        <select id="filtro" style="width:auto">
+          <option value="0">Hoy</option>
+          <option value="1">Ayer</option>
+          <option value="7">Últimos 7 días</option>
+        </select>
+      </div>
+      <p class="suave" id="resumen"></p>
+
+      <ul class="lista" id="lista"></ul>
+      <p class="suave centro oculto" id="vacio">No hay tomas registradas en este periodo.</p>
+    </section>
+
+    <nav class="nav">
+      <a href="panel.html">Panel</a>
+      <a href="historial.html" class="actual">Historial</a>
+    </nav>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/historial.js"></script>
+</body>
+</html>
