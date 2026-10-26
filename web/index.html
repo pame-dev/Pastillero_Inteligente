@@ -60,8 +60,9 @@
   </main>
 
   <script>
-    // Si llega aqui el enlace del correo de recuperar contrasena, pasar a la pantalla de contrasena nueva
-    if (location.hash.includes('type=recovery')) {
+    // Si llega aqui el enlace del correo de recuperar contrasena (o un enlace que ya no sirve),
+    // pasar a la pantalla de contrasena nueva, que dice que paso
+    if (location.hash.includes('type=recovery') || location.hash.includes('error_code=')) {
       location.replace('nueva-contrasena.html' + location.hash);
     }
   </script>
