@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pastillero inteligente · Nueva contraseña</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="app login">
+    <!-- Solo se ve en pantallas grandes (laptop) -->
+    <aside class="portada">
+      <div class="portada-marca">Pastillero inteligente</div>
+      <h2 class="portada-titulo">Recupera tu acceso.</h2>
+      <p class="portada-texto">Escribe tu contraseña nueva y entra directo a tu panel.</p>
+    </aside>
+
+    <section class="contenido">
+      <div class="logo">P</div>
+      <h1 class="centro">Nueva contraseña</h1>
+      <p class="suave centro" id="subtitulo">Revisando el enlace...</p>
+
+      <form id="form-nueva" class="oculto">
+        <label for="pass1">Contraseña nueva</label>
+        <input type="password" id="pass1" placeholder="Mínimo 6 caracteres" required minlength="6" autocomplete="new-password">
+
+        <label for="pass2">Repite la contraseña</label>
+        <input type="password" id="pass2" placeholder="Escríbela otra vez" required minlength="6" autocomplete="new-password">
+
+        <div class="botones">
+          <button type="submit" class="boton principal" id="btn-guardar">Guardar contraseña</button>
+        </div>
+      </form>
+      <p class="mensaje" id="mensaje"></p>
+
+      <p class="centro"><a href="index.html" class="enlace">Volver a iniciar sesión</a></p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/nueva-contrasena.js"></script>
+</body>
+</html>

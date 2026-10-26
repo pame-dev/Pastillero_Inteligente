@@ -86,7 +86,9 @@ document.getElementById('btn-olvide').addEventListener('click', async () => {
     mostrarMensaje(msg, 'Escribe tu correo arriba y vuelve a presionar.', 'error');
     return;
   }
-  const { error } = await db.auth.resetPasswordForEmail(email);
+  // El enlace del correo regresa a nuestra pagina para poner la contrasena nueva
+  const regresarA = new URL('nueva-contrasena.html', location.href).href;
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: regresarA });
   mostrarMensaje(msg, error ? traducirError(error.message) : 'Te enviamos un correo para cambiar la contraseña.', error ? 'error' : 'ok');
 });
 

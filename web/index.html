@@ -59,6 +59,12 @@
     </section>
   </main>
 
+  <script>
+    // Si llega aqui el enlace del correo de recuperar contrasena, pasar a la pantalla de contrasena nueva
+    if (location.hash.includes('type=recovery')) {
+      location.replace('nueva-contrasena.html' + location.hash);
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/common.js"></script>
