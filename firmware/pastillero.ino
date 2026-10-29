@@ -3,13 +3,15 @@
  * ------------------------------------------------------------
  * - 7 LEDs (uno por compartimento) en D0..D6, cada uno con 220 ohm a GND.
  * - Boton en A0 a GND (usa INPUT_PULLUP, sin resistencia externa).
- * - Sin buzzer: el aviso es solo el LED parpadeando.
+ * - Buzzer en A4 (patita + a A4, patita - a GND): suena junto con el LED que avisa.
+ * - Un solo boton apaga todos los LEDs que esten avisando (y el buzzer).
  *
  * Funciones en la nube (las llama la pagina web):
  *   horario  "3,08:00,8"  -> compartimento 3, primera toma 08:00, cada 8 horas
  *   horario  "3,p,08:00,14:00,21:30" -> compartimento 3, horas personalizadas (hasta 6)
  *   horario  "3,off"      -> desactiva el compartimento 3
  *   probar   "3"          -> enciende el LED 3 durante 5 segundos
+ *   simular  "3"          -> el compartimento 3 empieza a avisar YA (para probar el boton sin esperar)
  *
  * Evento que publica (lo recibe el webhook y lo guarda en Supabase):
  *   toma  {"comp":3,"estado":"tomada"}   o   {"comp":3,"estado":"omitida"}
@@ -20,6 +22,8 @@
 // ---------- Pines ----------
 const int LEDS[7] = {D0, D1, D2, D3, D4, D5, D6};
 const int BOTON = A0;
+const int BUZZER = A4;          // A4 permite tone() en el Photon
+const int TONO_HZ = 2000;       // tono del buzzer
 
 // ---------- Tiempos ----------
 const unsigned long LIMITE_AVISO_MS = 30UL * 60UL * 1000UL;  // 30 minutos para tomarla
@@ -170,6 +174,15 @@ int fnProbar(String cmd) {
   return c + 1;
 }
 
+// "3" -> el compartimento 3 empieza a avisar en este momento (prueba rapida del boton)
+int fnSimular(String cmd) {
+  int c = cmd.toInt() - 1;
+  if (c < 0 || c > 6) return -1;
+  avisoActivo[c] = true;
+  avisoInicio[c] = millis();
+  return c + 1;
+}
+
 // ============================================================
 // Logica
 // ============================================================
@@ -230,12 +243,15 @@ void setup() {
     probando[i] = false;
   }
   pinMode(BOTON, INPUT_PULLUP);
+  pinMode(BUZZER, OUTPUT);
+  noTone(BUZZER);
 
   cargarHorarios();
   Time.zone(-6);   // Hora del centro de Mexico (sin horario de verano)
 
   Particle.function("horario", fnHorario);
   Particle.function("probar", fnProbar);
+  Particle.function("simular", fnSimular);
 }
 
 void loop() {
@@ -278,6 +294,14 @@ void loop() {
     bool encender = probando[c] || (avisoActivo[c] && fase);
     digitalWrite(LEDS[c], encender ? HIGH : LOW);
   }
+
+  // 4b. Buzzer: pita al mismo ritmo que el LED mientras haya alguna pastilla pendiente
+  bool hayAviso = false;
+  for (int c = 0; c < 7; c++) if (avisoActivo[c]) hayAviso = true;
+  static bool sonando = false;
+  bool debeSonar = hayAviso && fase;
+  if (debeSonar && !sonando) { tone(BUZZER, TONO_HZ, 0); sonando = true; }
+  if (!debeSonar && sonando) { noTone(BUZZER); sonando = false; }
 
   // 5. Mandar a la nube los eventos pendientes
   enviarPendientes(ahora);
