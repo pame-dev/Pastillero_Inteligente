@@ -18,6 +18,10 @@
         <label for="dosis">Dosis</label>
         <input type="text" id="dosis" placeholder="Ej. 1 tableta de 850 mg" maxlength="60">
 
+        <label for="pastillas">Pastillas en el compartimento</label>
+        <input type="number" id="pastillas" class="corto" min="0" max="999" step="1" inputmode="numeric" placeholder="Ej. 30">
+        <p class="suave ayuda">Escribe cuántas pastillas pusiste. Cada vez que se presione el botón se descuenta una. Cuando lo rellenes, vuelve a escribir el número.</p>
+
         <label>Repetir cada</label>
         <div class="segmentos">
           <input type="radio" name="cada" id="c4" value="4"><label for="c4">4 h</label>

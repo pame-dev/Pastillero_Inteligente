@@ -127,7 +127,7 @@ label {
   color: var(--texto-suave); margin: 18px 0 6px;
 }
 
-input[type="text"], input[type="email"], input[type="password"], input[type="time"], select {
+input[type="text"], input[type="email"], input[type="password"], input[type="time"], input[type="number"], select {
   width: 100%;
   padding: 13px 14px;
   font: inherit;
@@ -325,6 +325,27 @@ input.corto { max-width: 170px; }
 .info .nombre { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .info .nombre.vacio { font-weight: 400; color: var(--texto-suave); }
 .info .detalle { font-size: 13px; color: var(--texto-suave); margin-top: 2px; }
+.info .extra {
+  display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px;
+  font-size: 12.5px; color: var(--texto-suave); font-variant-numeric: tabular-nums;
+}
+.info .extra span { display: inline-flex; align-items: center; gap: 4px; }
+.info .extra .pocas { color: var(--amarillo); font-weight: 600; }
+.info .extra .agotadas { color: var(--rojo); font-weight: 600; }
+.info .extra .ya { color: var(--azul); font-weight: 600; }
+
+/* Aviso: se terminaron las pastillas */
+.alerta {
+  background: #fbecea; color: var(--rojo);
+  border: 1px solid #f1cfcb; border-radius: var(--radio);
+  padding: 14px 18px; margin-bottom: 18px;
+  animation: aparecer .4s var(--curva) both;
+}
+.alerta strong { display: block; font-size: 16px; margin-bottom: 4px; }
+.alerta ul { margin: 6px 0 0; padding-left: 18px; }
+.alerta p { margin: 6px 0 0; font-size: 13px; color: #9a3a33; }
+.ayuda { font-size: 13px; margin-top: 6px; }
+
 .estado {
   display: flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 500; white-space: nowrap;

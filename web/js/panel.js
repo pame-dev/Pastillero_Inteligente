@@ -126,6 +126,57 @@ function mostrarToma(toma, fecha) {
     : { texto: 'Omitida ' + horaDe(fecha), color: 'rojo' };
 }
 
+// ---------- Contador de pastillas y cuenta regresiva de cada compartimento ----------
+function textoPastillas(n) {
+  if (n === 0) return { texto: 'Sin pastillas', clase: 'agotadas' };
+  if (n <= 3) return { texto: `Quedan ${n}`, clase: 'pocas' };
+  return { texto: `${n} pastillas`, clase: '' };
+}
+
+// Segunda linea de cada tarjeta: pastillas que quedan y cuanto falta para su toma
+function extraDe(c, siguiente) {
+  if (!c.activo && c.pastillas_restantes == null) return null;
+  const partes = [];
+  if (c.pastillas_restantes != null) {
+    const p = textoPastillas(c.pastillas_restantes);
+    partes.push(el('span', { className: p.clase }, '💊 ', p.texto));
+  }
+  if (c.activo && siguiente) {
+    const cuenta = el('span', { className: 'cuenta-comp' });
+    cuenta.dataset.fecha = siguiente.getTime();
+    pintarCuentaComp(cuenta);
+    partes.push(cuenta);
+  }
+  return partes.length ? el('div', { className: 'extra' }, ...partes) : null;
+}
+
+function pintarCuentaComp(nodo) {
+  const faltan = Math.floor((Number(nodo.dataset.fecha) - Date.now()) / 1000);
+  if (faltan <= 0) {
+    nodo.textContent = '⏱ Es hora';
+    nodo.classList.add('ya');
+    return;
+  }
+  const h = Math.floor(faltan / 3600);
+  const m = Math.floor((faltan % 3600) / 60);
+  const s = faltan % 60;
+  const dos = (n) => String(n).padStart(2, '0');
+  nodo.textContent = '⏱ en ' + (h > 0 ? h + ':' : '') + dos(m) + ':' + dos(s);
+  nodo.classList.remove('ya');
+}
+
+// Aviso grande arriba cuando algun compartimento se quedo sin pastillas
+function pintarAlertaPastillas(agotados) {
+  const caja = document.getElementById('alerta-pastillas');
+  if (!agotados.length) { caja.classList.add('oculto'); caja.replaceChildren(); return; }
+  caja.replaceChildren(
+    el('strong', {}, agotados.length === 1 ? 'Se terminaron las pastillas' : 'Se terminaron pastillas'),
+    el('ul', {}, ...agotados.map(c => el('li', {}, `Compartimento ${c.numero} · ${c.medicamento}`))),
+    el('p', {}, 'Rellena el compartimento y escribe el nuevo número de pastillas en su configuración.')
+  );
+  caja.classList.remove('oculto');
+}
+
 // ---------- Dibujar ----------
 async function cargarPanel() {
   const compartimentos = await obtenerCompartimentos(paciente.id);
@@ -147,18 +198,21 @@ async function cargarPanel() {
   const lista = document.getElementById('lista');
   lista.replaceChildren();
   let proxima = null;
+  const agotados = [];   // compartimentos activos que ya no tienen pastillas
 
   for (const c of compartimentos) {
     const estado = estadoCompartimento(c, ultima[c.numero], ahora);
 
+    let t = null;   // siguiente toma de este compartimento
     if (c.activo) {
-      let t = siguienteTomaDe(c, ahora);
+      t = siguienteTomaDe(c, ahora);
       // si esa toma ya se registro (tomada u omitida), la proxima es la siguiente
       const u = ultima[c.numero];
       if (t && u && new Date(u.fecha_hora).getTime() >= t.getTime() - 5 * 60000) {
         t = siguienteTomaDe(c, new Date(t.getTime() + (VENTANA_MIN + 1) * 60000));
       }
       if (t && (!proxima || t < proxima.fecha)) proxima = { fecha: t, comp: c };
+      if (c.pastillas_restantes === 0) agotados.push(c);
     }
 
     const nombre = c.medicamento
@@ -171,7 +225,7 @@ async function cargarPanel() {
     lista.append(el('li', {},
       el('a', { href: `configurar.html?n=${c.numero}` },
         el('span', { className: 'numero' }, c.numero),
-        el('div', { className: 'info' }, nombre, el('div', { className: 'detalle' }, detalle)),
+        el('div', { className: 'info' }, nombre, el('div', { className: 'detalle' }, detalle), extraDe(c, t)),
         estado && el('span', { className: 'estado' },
           el('span', { className: 'punto ' + estado.color }), estado.texto)
       )
@@ -179,6 +233,7 @@ async function cargarPanel() {
   }
 
   lista.classList.add('ya-cargo');   // la animacion de entrada solo la primera vez
+  pintarAlertaPastillas(agotados);
   proximaFecha = proxima ? proxima.fecha : null;
   actualizarCuenta();
 
@@ -192,6 +247,7 @@ async function cargarPanel() {
 
 // ---------- Cuenta regresiva y saludo (se actualizan solos) ----------
 function actualizarCuenta() {
+  document.querySelectorAll('.cuenta-comp').forEach(pintarCuentaComp);
   const nodo = document.getElementById('proxima-cuenta');
   if (!proximaFecha) { nodo.textContent = ''; return; }
   const faltan = Math.floor((proximaFecha - Date.now()) / 1000);
@@ -246,8 +302,10 @@ async function revisarConexion() {
   await cargarPanel();
   revisarConexion();
 
-  // se actualiza solo cada minuto
-  setInterval(() => { cargarPanel(); revisarConexion(); }, 60000);
+  // las tomas se revisan cada 10 segundos (para ver rapido cuando se presiona el boton)
+  setInterval(() => { cargarPanel().catch(console.error); }, 10000);
+  // la conexion del Photon se revisa cada minuto
+  setInterval(revisarConexion, 60000);
   // la cuenta regresiva avanza cada segundo
   setInterval(actualizarCuenta, 1000);
 })().catch((err) => {

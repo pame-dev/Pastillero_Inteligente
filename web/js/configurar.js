@@ -8,6 +8,7 @@ const campo = {
   medicamento: document.getElementById('medicamento'),
   dosis: document.getElementById('dosis'),
   hora: document.getElementById('hora'),
+  pastillas: document.getElementById('pastillas'),
   activo: document.getElementById('activo')
 };
 const msg = document.getElementById('mensaje');
@@ -90,6 +91,14 @@ document.getElementById('form').addEventListener('submit', async (e) => {
     return;
   }
 
+  // Numero de pastillas: vacio = no se cuentan
+  const textoPastillas = campo.pastillas.value.trim();
+  const pastillas = textoPastillas === '' ? null : Number(textoPastillas);
+  if (pastillas !== null && !(Number.isInteger(pastillas) && pastillas >= 0 && pastillas <= 999)) {
+    mostrarMensaje(msg, 'El número de pastillas debe ser un número entero entre 0 y 999.', 'error');
+    return;
+  }
+
   const btn = document.getElementById('btn-guardar');
   btn.disabled = true;
   mostrarMensaje(msg, 'Guardando...');
@@ -101,6 +110,7 @@ document.getElementById('form').addEventListener('submit', async (e) => {
     hora_inicio: primeraHora || null,
     cada_horas: personalizado ? null : cadaSeleccionado(),
     horas_personalizadas: personalizado ? horas.join(',') : null,
+    pastillas_restantes: pastillas,
     activo
   };
   const { error } = await db.from('compartimentos').update(cambios).eq('id', compartimento.id);
@@ -158,6 +168,7 @@ document.getElementById('btn-probar').addEventListener('click', async () => {
   document.title = 'Compartimento ' + numero + ' · Pastillero inteligente';
   campo.medicamento.value = data.medicamento || '';
   campo.dosis.value = data.dosis || '';
+  campo.pastillas.value = data.pastillas_restantes ?? '';
   if (data.hora_inicio) campo.hora.value = data.hora_inicio.slice(0, 5);
   const guardadas = leerHorasPersonalizadas(data.horas_personalizadas);
   if (guardadas.length) {
