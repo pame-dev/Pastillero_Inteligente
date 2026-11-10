@@ -562,3 +562,27 @@ input.corto { max-width: 170px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Ojito para ver la contrasena */
+.campo-contrasena { position: relative; }
+.campo-contrasena input { padding-right: 48px; }
+.ojito {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 10px; background: transparent;
+  color: var(--texto-suave); cursor: pointer;
+}
+.ojito:hover { color: var(--azul); background: rgba(31, 95, 91, .08); }
+
+/* Aviso: una pastilla no se tomo (con boton para registrarla a mano) */
+.alerta.aviso { background: #fdf4e3; color: #8a5a12; border-color: #f0dcb4; }
+.alerta.aviso p { color: #8a5a12; }
+.alerta.aviso ul { list-style: none; padding: 0; display: grid; gap: 8px; }
+.alerta.aviso li {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  font-size: 14px;
+}
+.alerta.aviso .boton.chico { padding: 7px 14px; font-size: 13px; }
+.punto.azul { background: var(--azul); }
+.info .registrar { display: block; margin-top: 4px; font-size: 13px; padding: 0; text-align: left; }

@@ -136,7 +136,7 @@ async function photonEnLinea(photonId) {
 }
 
 // ---------- Horas ----------
-const VENTANA_MIN = 30;   // minutos que el LED avisa antes de marcar "omitida"
+const VENTANA_MIN = 15;   // minutos de tolerancia: el LED avisa y despues se marca "no tomada"
 
 // "08:00:00" -> 480
 function aMinutos(horaTexto) {
@@ -247,3 +247,104 @@ function mostrarMensaje(nodo, texto, tipo = '') {
   nodo.textContent = texto;
   nodo.className = 'mensaje ' + tipo;
 }
+
+// ---------------------------------------------------------------
+// Registrar a mano la hora en que si se tomo una pastilla "no tomada"
+// (solo se ofrece en tomas omitidas; el boton del pastillero no cambia)
+// ---------------------------------------------------------------
+function textoToma(toma) {
+  if (toma.estado === 'tomada') return { texto: 'Tomada ' + horaDe(new Date(toma.fecha_hora)), color: 'verde' };
+  if (toma.hora_manual) return { texto: 'Tomada ' + horaDe(new Date(toma.hora_manual)) + ' (a mano)', color: 'azul' };
+  return { texto: 'No tomada', color: 'rojo' };
+}
+
+// "16:20" -> fecha completa cerca de la toma (cubre cuando pasa la medianoche)
+function fechaManual(horaTexto, toma) {
+  const base = new Date(toma.fecha_hora);
+  const [h, m] = horaTexto.split(':').map(Number);
+  const fecha = new Date(base);
+  fecha.setHours(h, m, 0, 0);
+  if (fecha.getTime() < base.getTime() - 75 * 60000) fecha.setDate(fecha.getDate() + 1);
+  return fecha;
+}
+
+function abrirRegistroManual(toma, medicamento, alGuardar) {
+  let dlg = document.getElementById('dlg-manual');
+  if (!dlg) {
+    dlg = el('dialog', { id: 'dlg-manual', className: 'dialogo' },
+      el('form', { id: 'form-manual' },
+        el('h2', {}, '¿A qué hora se tomó?'),
+        el('p', { className: 'suave', id: 'manual-detalle' }),
+        el('label', { htmlFor: 'hora-manual' }, 'Hora en que se tomó la pastilla'),
+        el('input', { type: 'time', id: 'hora-manual', required: true }),
+        el('div', { className: 'botones' },
+          el('button', { type: 'button', className: 'boton', id: 'btn-cancelar-manual' }, 'Cancelar'),
+          el('button', { type: 'submit', className: 'boton principal', id: 'btn-guardar-manual' }, 'Guardar')),
+        el('p', { className: 'mensaje', id: 'msg-manual' })));
+    document.body.append(dlg);
+    document.getElementById('btn-cancelar-manual').addEventListener('click', () => dlg.close());
+  }
+
+  const msg = document.getElementById('msg-manual');
+  const marcada = new Date(toma.fecha_hora);
+  document.getElementById('manual-detalle').textContent =
+    `Compartimento ${toma.numero}${medicamento ? ' · ' + medicamento : ''}. ` +
+    `Se marcó como no tomada a las ${horaDe(marcada)}.`;
+  document.getElementById('hora-manual').value = horaDe(new Date());
+  mostrarMensaje(msg, '');
+
+  const form = document.getElementById('form-manual');
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const fecha = fechaManual(document.getElementById('hora-manual').value, toma);
+    if (fecha.getTime() > Date.now() + 60000) {
+      mostrarMensaje(msg, 'Esa hora todavía no pasa.', 'error');
+      return;
+    }
+    const btn = document.getElementById('btn-guardar-manual');
+    btn.disabled = true;
+    mostrarMensaje(msg, 'Guardando...');
+    const { error } = await db.rpc('registrar_toma_manual', { p_toma_id: toma.id, p_hora: fecha.toISOString() });
+    btn.disabled = false;
+    if (error) {
+      const texto = error.message.includes('registrar_toma_manual')
+        ? 'Falta ejecutar backend/toma-manual.sql en Supabase.'
+        : error.message;
+      mostrarMensaje(msg, texto, 'error');
+      return;
+    }
+    dlg.close();
+    if (alGuardar) alGuardar();
+  };
+  dlg.showModal();
+}
+
+// ---------------------------------------------------------------
+// Ojito para ver la contrasena: se agrega solo a cada campo de contrasena
+// ---------------------------------------------------------------
+(function agregarOjitos() {
+  const OJO = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const OJO_TACHADO = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.1 10.1 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 11 7 11 7a18.6 18.6 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+  document.querySelectorAll('input[type="password"]').forEach(input => {
+    const caja = document.createElement('div');
+    caja.className = 'campo-contrasena';
+    input.parentNode.insertBefore(caja, input);
+    caja.appendChild(input);
+
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'ojito';
+    boton.innerHTML = OJO;
+    boton.setAttribute('aria-label', 'Mostrar contraseña');
+    caja.appendChild(boton);
+
+    boton.addEventListener('click', () => {
+      const oculta = input.type === 'password';
+      input.type = oculta ? 'text' : 'password';
+      boton.innerHTML = oculta ? OJO_TACHADO : OJO;
+      boton.setAttribute('aria-label', oculta ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      input.focus();
+    });
+  });
+})();

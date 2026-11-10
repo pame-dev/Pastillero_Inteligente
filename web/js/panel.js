@@ -121,9 +121,10 @@ function estadoCompartimento(comp, ultimaToma, ahora) {
 }
 
 function mostrarToma(toma, fecha) {
-  return toma.estado === 'tomada'
-    ? { texto: 'Tomada ' + horaDe(fecha), color: 'verde' }
-    : { texto: 'Omitida ' + horaDe(fecha), color: 'rojo' };
+  if (toma.estado === 'omitida' && !toma.hora_manual) {
+    return { texto: 'No tomada ' + horaDe(fecha), color: 'rojo' };
+  }
+  return textoToma(toma);
 }
 
 // ---------- Contador de pastillas y cuenta regresiva de cada compartimento ----------
@@ -177,6 +178,26 @@ function pintarAlertaPastillas(agotados) {
   caja.classList.remove('oculto');
 }
 
+// Aviso cuando una pastilla no se tomo (pasaron los 15 minutos sin presionar el boton).
+// Aqui aparece la opcion de registrar a mano la hora en que si se tomo.
+function pintarAlertaOmitidas(omitidas) {
+  const caja = document.getElementById('alerta-omitidas');
+  if (!omitidas.length) { caja.classList.add('oculto'); caja.replaceChildren(); return; }
+  caja.replaceChildren(
+    el('strong', {}, omitidas.length === 1 ? 'Una pastilla no se tomó' : 'Hay pastillas que no se tomaron'),
+    el('ul', {}, ...omitidas.map(({ toma, comp }) => {
+      const boton = el('button', { type: 'button', className: 'boton chico' }, 'Registrar hora en que se tomó');
+      boton.addEventListener('click', () =>
+        abrirRegistroManual(toma, comp.medicamento, () => cargarPanel().catch(console.error)));
+      return el('li', {},
+        el('span', {}, `Compartimento ${comp.numero} · ${comp.medicamento || ''} · no se presionó el botón (${horaDe(new Date(toma.fecha_hora))})`),
+        boton);
+    })),
+    el('p', {}, 'Si sí se la tomó, registra la hora. Es opcional.')
+  );
+  caja.classList.remove('oculto');
+}
+
 // ---------- Dibujar ----------
 async function cargarPanel() {
   const compartimentos = await obtenerCompartimentos(paciente.id);
@@ -185,7 +206,7 @@ async function cargarPanel() {
   const desde = new Date(Date.now() - 48 * 3600000).toISOString();
   const { data: tomas, error } = await db
     .from('tomas')
-    .select('numero, estado, fecha_hora')
+    .select('id, numero, estado, fecha_hora, hora_manual')
     .eq('paciente_id', paciente.id)
     .gte('fecha_hora', desde)
     .order('fecha_hora', { ascending: false });
@@ -199,6 +220,7 @@ async function cargarPanel() {
   lista.replaceChildren();
   let proxima = null;
   const agotados = [];   // compartimentos activos que ya no tienen pastillas
+  const omitidas = [];   // su ultima toma salio "no tomada" y aun no se registra a mano
 
   for (const c of compartimentos) {
     const estado = estadoCompartimento(c, ultima[c.numero], ahora);
@@ -214,6 +236,8 @@ async function cargarPanel() {
       if (t && (!proxima || t < proxima.fecha)) proxima = { fecha: t, comp: c };
       if (c.pastillas_restantes === 0) agotados.push(c);
     }
+    const u = ultima[c.numero];
+    if (u && u.estado === 'omitida' && !u.hora_manual) omitidas.push({ toma: u, comp: c });
 
     const nombre = c.medicamento
       ? el('div', { className: 'nombre' }, c.medicamento)
@@ -234,6 +258,7 @@ async function cargarPanel() {
 
   lista.classList.add('ya-cargo');   // la animacion de entrada solo la primera vez
   pintarAlertaPastillas(agotados);
+  pintarAlertaOmitidas(omitidas);
   proximaFecha = proxima ? proxima.fecha : null;
   actualizarCuenta();
 

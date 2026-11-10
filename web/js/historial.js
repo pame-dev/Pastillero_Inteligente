@@ -20,7 +20,7 @@ async function cargarHistorial() {
   const [desde, hasta] = rango(filtro.value);
   const { data: tomas, error } = await db
     .from('tomas')
-    .select('numero, estado, fecha_hora')
+    .select('id, numero, estado, fecha_hora, hora_manual')
     .eq('paciente_id', paciente.id)
     .gte('fecha_hora', desde.toISOString())
     .lt('fecha_hora', hasta.toISOString())
@@ -28,25 +28,35 @@ async function cargarHistorial() {
   if (error) throw error;
 
   const tomadas = tomas.filter(t => t.estado === 'tomada').length;
-  const omitidas = tomas.length - tomadas;
+  const aMano = tomas.filter(t => t.estado === 'omitida' && t.hora_manual).length;
+  const omitidas = tomas.length - tomadas - aMano;
   document.getElementById('resumen').textContent =
-    `${tomadas} ${tomadas === 1 ? 'tomada' : 'tomadas'} · ${omitidas} ${omitidas === 1 ? 'omitida' : 'omitidas'}`;
+    `${tomadas} ${tomadas === 1 ? 'tomada' : 'tomadas'} · ` +
+    (aMano ? `${aMano} ${aMano === 1 ? 'registrada' : 'registradas'} a mano · ` : '') +
+    `${omitidas} no ${omitidas === 1 ? 'tomada' : 'tomadas'}`;
   document.getElementById('vacio').classList.toggle('oculto', tomas.length > 0);
 
   const verFecha = filtro.value === '7';
   const lista = document.getElementById('lista');
   lista.replaceChildren(...tomas.map(t => {
     const fecha = new Date(t.fecha_hora);
-    const tomada = t.estado === 'tomada';
+    const estado = textoToma(t);
+    // Solo en las "no tomadas": opcion de registrar a mano la hora en que si se tomo
+    let registrar = null;
+    if (t.estado === 'omitida' && !t.hora_manual) {
+      registrar = el('button', { type: 'button', className: 'enlace registrar' }, 'Registrar hora en que se tomó');
+      registrar.addEventListener('click', () =>
+        abrirRegistroManual(t, nombres[t.numero], () => cargarHistorial().catch(console.error)));
+    }
     return el('li', {},
       el('div', { className: 'fila' },
         el('span', { className: 'hora' }, horaDe(fecha),
           verFecha && el('small', {}, fecha.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }))),
         el('span', { className: 'numero' }, t.numero),
-        el('div', { className: 'info' }, nombres[t.numero] || 'Compartimento ' + t.numero),
+        el('div', { className: 'info' }, nombres[t.numero] || 'Compartimento ' + t.numero, registrar),
         el('span', { className: 'estado' },
-          el('span', { className: 'punto ' + (tomada ? 'verde' : 'rojo') }),
-          tomada ? 'Tomada' : 'Omitida')
+          el('span', { className: 'punto ' + estado.color }),
+          t.estado === 'tomada' ? 'Tomada' : estado.texto)
       )
     );
   }));
