@@ -84,6 +84,13 @@ drop policy if exists "acceso libre tomas"          on public.tomas;
 -- Horario personalizado en cada compartimento
 alter table public.compartimentos add column if not exists horas_personalizadas text;
 
+-- Contador de pastillas: cuantas quedan en cada compartimento (vacio = no se cuentan)
+alter table public.compartimentos add column if not exists pastillas_restantes integer
+  check (pastillas_restantes >= 0);
+
+-- Hora en que si se tomo una pastilla que salio "no tomada" (se registra a mano en la web)
+alter table public.tomas add column if not exists hora_manual timestamptz;
+
 -- Perfil del encargado: nombre y foto (los dos opcionales)
 create table if not exists public.responsables (
   id      uuid primary key default auth.uid()
@@ -155,8 +162,75 @@ begin
 
   insert into public.tomas (paciente_id, numero, estado)
   values (v_paciente, p_numero::smallint, p_estado);
+
+  -- Si se tomo, se descuenta una pastilla de ese compartimento (nunca baja de 0)
+  if p_estado = 'tomada' then
+    update public.compartimentos
+       set pastillas_restantes = greatest(pastillas_restantes - 1, 0)
+     where paciente_id = v_paciente
+       and numero = p_numero::smallint
+       and pastillas_restantes is not null;
+  end if;
 end;
 $$;
 
 revoke all on function public.registrar_toma(text, text, text) from public;
 grant execute on function public.registrar_toma(text, text, text) to anon, authenticated;
+
+-- ---------------------------------------------------------------
+-- 5. Registrar a mano una pastilla que salio "no tomada"
+-- ---------------------------------------------------------------
+-- La web la llama cuando el encargado escribe la hora en que se tomo.
+--    Solo funciona con tomas "omitida" del propio encargado, y una sola vez.
+--    Tambien descuenta una pastilla del compartimento.
+create or replace function public.registrar_toma_manual(
+  p_toma_id bigint,
+  p_hora    timestamptz
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v record;
+begin
+  select t.id, t.paciente_id, t.numero, t.estado, t.hora_manual, t.fecha_hora
+    into v
+    from public.tomas t
+    join public.pacientes p on p.id = t.paciente_id
+   where t.id = p_toma_id
+     and p.responsable_id = auth.uid();
+
+  if v.id is null then
+    raise exception 'No se encontro esa toma';
+  end if;
+  if v.estado <> 'omitida' then
+    raise exception 'Esa pastilla ya estaba marcada como tomada';
+  end if;
+  if v.hora_manual is not null then
+    raise exception 'Esa pastilla ya se registro a mano';
+  end if;
+  if p_hora > now() + interval '2 minutes' then
+    raise exception 'La hora no puede ser despues de ahora';
+  end if;
+  if p_hora < v.fecha_hora - interval '75 minutes' then
+    raise exception 'La hora es antes de que le tocara la pastilla';
+  end if;
+
+  update public.tomas set hora_manual = p_hora where id = p_toma_id;
+
+  update public.compartimentos
+     set pastillas_restantes = greatest(pastillas_restantes - 1, 0)
+   where paciente_id = v.paciente_id
+     and numero = v.numero
+     and pastillas_restantes is not null;
+end;
+$$;
+
+revoke all on function public.registrar_toma_manual(bigint, timestamptz) from public;
+grant execute on function public.registrar_toma_manual(bigint, timestamptz) to authenticated;
+
+-- Que Supabase vea los cambios de inmediato
+notify pgrst, 'reload schema';
+

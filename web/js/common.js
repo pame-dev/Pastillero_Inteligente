@@ -136,7 +136,7 @@ async function photonEnLinea(photonId) {
 }
 
 // ---------- Horas ----------
-const VENTANA_MIN = 15;   // minutos de tolerancia: el LED avisa y despues se marca "no tomada"
+const VENTANA_MIN = 0.5;   // PRUEBA: 30 segundos (lo normal: 15)
 
 // "08:00:00" -> 480
 function aMinutos(horaTexto) {
